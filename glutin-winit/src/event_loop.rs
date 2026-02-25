@@ -1,5 +1,5 @@
 use raw_window_handle::{DisplayHandle, HandleError, HasDisplayHandle};
-use winit::error::OsError;
+use winit::error::{OsError, RequestError};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Window, WindowAttributes};
 
@@ -12,16 +12,16 @@ pub trait GlutinEventLoop: Sealed {
     /// Create the window.
     ///
     /// See [`ActiveEventLoop::create_window`] for details.
-    fn create_window(&self, window_attributes: WindowAttributes) -> Result<Window, OsError>;
+    fn create_window(&self, window_attributes: WindowAttributes) -> Result<Box<dyn Window>, RequestError>;
 
     /// Get a handle to the display controller of the windowing system.
     fn glutin_display_handle(&self) -> Result<DisplayHandle<'_>, HandleError>;
 }
 
-impl Sealed for ActiveEventLoop {}
+impl Sealed for dyn ActiveEventLoop {}
 
-impl GlutinEventLoop for ActiveEventLoop {
-    fn create_window(&self, window_attributes: WindowAttributes) -> Result<Window, OsError> {
+impl GlutinEventLoop for dyn ActiveEventLoop {
+    fn create_window(&self, window_attributes: WindowAttributes) -> Result<Box<dyn Window>, RequestError> {
         self.create_window(window_attributes)
     }
 
@@ -30,11 +30,11 @@ impl GlutinEventLoop for ActiveEventLoop {
     }
 }
 
-impl<T> Sealed for EventLoop<T> {}
+impl Sealed for EventLoop {}
 
-impl<T> GlutinEventLoop for EventLoop<T> {
+impl GlutinEventLoop for EventLoop {
     #[allow(deprecated)]
-    fn create_window(&self, window_attributes: WindowAttributes) -> Result<Window, OsError> {
+    fn create_window(&self, window_attributes: WindowAttributes) -> Result<Box<dyn Window>, RequestError> {
         self.create_window(window_attributes)
     }
 
