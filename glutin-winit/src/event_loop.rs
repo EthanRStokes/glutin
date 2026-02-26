@@ -31,14 +31,3 @@ impl GlutinEventLoop for dyn ActiveEventLoop {
 }
 
 impl Sealed for EventLoop {}
-
-impl GlutinEventLoop for EventLoop {
-    #[allow(deprecated)]
-    fn create_window(&self, window_attributes: WindowAttributes) -> Result<Box<dyn Window>, RequestError> {
-        self.create_window(window_attributes)
-    }
-
-    fn glutin_display_handle(&self) -> Result<DisplayHandle<'_>, HandleError> {
-        self.display_handle()
-    }
-}

@@ -96,7 +96,7 @@ impl DisplayBuilder {
     /// otherwise only builtin functions like `glClear` will be available.
     pub fn build<Picker>(
         mut self,
-        event_loop: &impl GlutinEventLoop,
+        event_loop: &Box<impl GlutinEventLoop>,
         template_builder: ConfigTemplateBuilder,
         config_picker: Picker,
     ) -> Result<(Option<Box<dyn Window>>, Config), Box<dyn Error>>
@@ -149,7 +149,7 @@ impl DisplayBuilder {
 }
 
 fn create_display(
-    event_loop: &impl GlutinEventLoop,
+    event_loop: &Box<impl GlutinEventLoop>,
     _api_preference: ApiPreference,
     _raw_window_handle: Option<RawWindowHandle>,
 ) -> Result<Display, Box<dyn Error>> {
@@ -192,7 +192,7 @@ fn create_display(
 /// [`Window`]: winit::window::Window
 /// [`Config`]: glutin::config::Config
 pub fn finalize_window(
-    event_loop: &impl GlutinEventLoop,
+    event_loop: &Box<impl GlutinEventLoop>,
     mut attributes: WindowAttributes,
     gl_config: &Config,
 ) -> Result<Box<dyn Window>, RequestError> {
