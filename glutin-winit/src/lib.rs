@@ -8,10 +8,8 @@
 #![deny(missing_docs)]
 #![cfg_attr(clippy, deny(warnings))]
 
-mod event_loop;
 mod window;
 
-use event_loop::GlutinEventLoop;
 pub use window::GlWindow;
 
 use std::error::Error;
@@ -25,8 +23,9 @@ use glutin::prelude::*;
 #[cfg(wgl_backend)]
 use raw_window_handle::HasWindowHandle;
 
-use raw_window_handle::RawWindowHandle;
+use raw_window_handle::{HasDisplayHandle, RawWindowHandle};
 use winit::error::{OsError, RequestError};
+use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowAttributes};
 
 #[cfg(x11_platform)]
@@ -96,7 +95,7 @@ impl DisplayBuilder {
     /// otherwise only builtin functions like `glClear` will be available.
     pub fn build<Picker>(
         mut self,
-        event_loop: Box<&impl GlutinEventLoop>,
+        event_loop: &dyn ActiveEventLoop,
         template_builder: ConfigTemplateBuilder,
         config_picker: Picker,
     ) -> Result<(Option<Box<dyn Window>>, Config), Box<dyn Error>>
@@ -119,7 +118,7 @@ impl DisplayBuilder {
         #[cfg(not(wgl_backend))]
         let raw_window_handle = None;
 
-        let gl_display = create_display(*event_loop, self.preference, raw_window_handle)?;
+        let gl_display = create_display(event_loop, self.preference, raw_window_handle)?;
 
         // XXX the native window must be passed to config picker when WGL is used
         // otherwise very limited OpenGL features will be supported.
@@ -139,7 +138,7 @@ impl DisplayBuilder {
 
         #[cfg(not(wgl_backend))]
         let window = if let Some(wa) = self.window_attributes.take() {
-            Some(finalize_window(*event_loop, wa, &gl_config)?)
+            Some(finalize_window(event_loop, wa, &gl_config)?)
         } else {
             None
         };
@@ -149,7 +148,7 @@ impl DisplayBuilder {
 }
 
 fn create_display(
-    event_loop: &impl GlutinEventLoop,
+    event_loop: &dyn ActiveEventLoop,
     _api_preference: ApiPreference,
     _raw_window_handle: Option<RawWindowHandle>,
 ) -> Result<Display, Box<dyn Error>> {
@@ -181,7 +180,7 @@ fn create_display(
         ApiPreference::FallbackEgl => DisplayApiPreference::WglThenEgl(_raw_window_handle),
     };
 
-    let handle = event_loop.glutin_display_handle()?.as_raw();
+    let handle = event_loop.display_handle()?.as_raw();
     unsafe { Ok(Display::new(handle, _preference)?) }
 }
 
@@ -192,7 +191,7 @@ fn create_display(
 /// [`Window`]: winit::window::Window
 /// [`Config`]: glutin::config::Config
 pub fn finalize_window(
-    event_loop: &impl GlutinEventLoop,
+    event_loop: &dyn ActiveEventLoop,
     mut attributes: WindowAttributes,
     gl_config: &Config,
 ) -> Result<Box<dyn Window>, RequestError> {
